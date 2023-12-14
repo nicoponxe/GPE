@@ -1,2 +1,2 @@
 # Gait Percentage Prediction ML
-Gait percentage prediction ML
+Gait Percent Estimation during Walking and Running using Sagittal Shank or Thigh Angles
