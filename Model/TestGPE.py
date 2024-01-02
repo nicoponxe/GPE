@@ -1,5 +1,3 @@
-
-
 # This code is used for testing a previously saved model with new data that the model hasn't encountered before.
 
 import pickle
