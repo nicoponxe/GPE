@@ -1,3 +1,4 @@
+import os
 import pickle
 from mat_to_csv import MatToCsv
 import matplotlib.pyplot as plt
@@ -40,6 +41,11 @@ def augment_dataset(df):
 
 def preprocess_dataset(file_name):
     matToCsv = MatToCsv()
+    path_to_mat = os.environ['PATH_TO_MAT']
+
+    if(path_to_mat != '' and path_to_mat != None):
+        file_name = "{}/{}".format(path_to_mat, file_name)
+
     dataset = matToCsv.dataset(file_name)
 
     # Extract name and velocity from the file name

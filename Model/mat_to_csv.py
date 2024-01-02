@@ -1,4 +1,3 @@
-#!/Users/nico/Desktop/GaitUP - UP/mat_to_csv.py
 import os
 import re
 import csv
