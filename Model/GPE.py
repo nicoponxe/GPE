@@ -7,7 +7,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error as MSE, r2_score
 import xgboost as xg
-
+from augmentation_methods import AugmentationMethods
+from improve_data import ImproveData
 
 def calculate_angular_velocity(angles, delta_t):
     return np.concatenate(([np.nan], np.diff(angles) / delta_t))
@@ -24,20 +25,6 @@ def calculate_integral(angles, delta_t, velocity):
     integral_values.insert(0, 0)
 
     return integral_values
-
-
-def time_shift(data, shift):
-    return np.roll(data, shift)
-
-
-def augment_dataset(df):
-    augmented_dfs = []
-    for shift in range(-n_shifts, n_shifts + 1):
-        shifted_df = df.copy()
-        shifted_df['ShankAngles'] = time_shift(shifted_df['ShankAngles'], shift)
-        shifted_df['ThighAngles'] = time_shift(shifted_df['ThighAngles'], shift)
-        augmented_dfs.append(shifted_df)
-    return pd.concat(augmented_dfs, axis=0)
 
 def preprocess_dataset(file_name):
     matToCsv = MatToCsv()
@@ -95,12 +82,22 @@ thighDF = pd.concat(datasets[3:], axis=0).drop('gait_percentage', axis=1)
 
 bothDF = pd.concat([shankDF, thighDF], axis=1)
 
-n_shifts = 1
-bothDF = augment_dataset(bothDF)
+bothDF = ImproveData().add_non_linear_data(bothDF)       # Suggested by Mahdy
+bothDF = AugmentationMethods().augment_dataset(bothDF)   # Adds Augmentation methods to the dataset
 
-
-X = bothDF[
-    ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']]
+if('non_linear_1' in bothDF.columns):
+    print("Non linear data has been added")
+    X = bothDF[[
+        'ShankAngles',
+        'ShankAngularVelocity',
+        'ThighAngles',
+        'ThighAngularVelocity',
+        'non_linear_1',
+        'non_linear_2'
+        ]]
+else:
+    X = bothDF[
+        ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']]
 y = bothDF['gait_percentage']
 # bothDF.to_csv('merged_dataset.csv', index=False)
 
