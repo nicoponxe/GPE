@@ -101,35 +101,43 @@ else:
 y = bothDF['gait_percentage']
 # bothDF.to_csv('merged_dataset.csv', index=False)
 
-# Splitting
-train_X, test_X, train_y, test_y = train_test_split(X, y,
-                                                    test_size=0.3, random_state=123)
+# First, split into training and test
+train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.2, random_state=123)
 
+# Then, split the train into validation and train
+val_X, train_X, val_y, train_y = train_test_split(train_X, train_y, test_size=0.5, random_state=123)
 
 best_xgb_r = xg.XGBRegressor(objective='reg:gamma', seed=123)
 best_xgb_r.fit(train_X, train_y)
 
-#save the model
+# Save the model
 with open('xgb_model.pkl5', 'wb') as f:
     pickle.dump(best_xgb_r, f)
 
-# Test RMSE
-test_pred = best_xgb_r.predict(test_X)
-test_rmse = np.sqrt(MSE(test_y, test_pred))
-
-# Training RMSE
+# Prediction and RMSE for train, validation, and test sets
 train_pred = best_xgb_r.predict(train_X)
 train_rmse = np.sqrt(MSE(train_y, train_pred))
-
-
-print("Train RMSE:", train_rmse)
-print("Test RMSE:", test_rmse)
-
-test_r2 = r2_score(test_y, test_pred)
 train_r2 = r2_score(train_y, train_pred)
 
+val_pred = best_xgb_r.predict(val_X)
+val_rmse = np.sqrt(MSE(val_y, val_pred))
+val_r2 = r2_score(val_y, val_pred)
+
+test_pred = best_xgb_r.predict(test_X)
+test_rmse = np.sqrt(MSE(test_y, test_pred))
+test_r2 = r2_score(test_y, test_pred)
+
+# Print RMSE and R2 scores
+print("")
+print("Train RMSE:", train_rmse)
+print("Validation RMSE:", val_rmse)
+print("Test RMSE:", test_rmse)
+print("")
 print("Train R2 score:", train_r2)
+print("Validation R2 score:", val_r2)
 print("Test R2 score:", test_r2)
+print("")
+
 # Create a DataFrame with the predicted and original values for ShankAngles and ThighAngles
 df = pd.DataFrame(
     {'test_y': test_y, 'pred': test_pred, 'ShankAngles': test_X['ShankAngles'], 'ThighAngles': test_X['ThighAngles']})
