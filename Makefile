@@ -20,4 +20,7 @@ install:
 train:
 	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/GPE.py
 
+test:
+	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/TestGPE.py
+
 .PHONY: mat_2_csv
