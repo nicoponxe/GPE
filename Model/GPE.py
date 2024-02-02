@@ -1,14 +1,16 @@
 import os
+import argparse
 import pickle
-from mat_to_csv import MatToCsv
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import xgboost as xg
+from mat_to_csv import MatToCsv
+from improve_data import ImproveData
+from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error as MSE, r2_score
-import xgboost as xg
 from augmentation_methods import AugmentationMethods
-from improve_data import ImproveData
 
 def calculate_angular_velocity(angles, delta_t):
     return np.concatenate(([np.nan], np.diff(angles) / delta_t))
@@ -72,7 +74,6 @@ def preprocess_dataset(file_name):
 
     return df
 
-
 file_names = ['ShkAngW_05ms.mat', 'ShkAngW_10ms.mat','ShkAngW_15ms.mat', 'ThiAngW_05ms.mat', 'ThiAngW_10ms.mat', 'ThiAngW_15ms.mat']
 datasets = [preprocess_dataset(file_name) for file_name in file_names]
 
@@ -85,19 +86,20 @@ bothDF = pd.concat([shankDF, thighDF], axis=1)
 bothDF = ImproveData().add_non_linear_data(bothDF)       # Suggested by Mahdy
 bothDF = AugmentationMethods().augment_dataset(bothDF)   # Adds Augmentation methods to the dataset
 
+X = bothDF[['ShankAngles',
+            'ShankAngularVelocity',
+            'ThighAngles',
+            'ThighAngularVelocity']]
+
 if('non_linear_1' in bothDF.columns):
     print("Non linear data has been added")
-    X = bothDF[[
-        'ShankAngles',
-        'ShankAngularVelocity',
-        'ThighAngles',
-        'ThighAngularVelocity',
-        'non_linear_1',
-        'non_linear_2'
-        ]]
-else:
-    X = bothDF[
-        ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']]
+    X = bothDF[['ShankAngles',
+                'ShankAngularVelocity',
+                'ThighAngles',
+                'ThighAngularVelocity',
+                'non_linear_1',
+                'non_linear_2']]
+
 y = bothDF['gait_percentage']
 # bothDF.to_csv('merged_dataset.csv', index=False)
 
