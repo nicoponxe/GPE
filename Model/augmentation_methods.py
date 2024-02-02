@@ -5,7 +5,7 @@ class AugmentationMethods:
     def augment_dataset(self, df):
         result = df
         print("Original Dataset Length: {}".format(len(result)))
-        result = AugmentationMethods().time_shift(result)
+        result = AugmentationMethods().time_shift(result, 4)
         print("Length after time_shift: {}".format(len(result)))
         return result
 
