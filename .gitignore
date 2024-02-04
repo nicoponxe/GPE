@@ -1,1 +1,4 @@
+.DS_Store
+person_*.png
+xgb_kfold_model.pkl5
 xgb_model.pkl5
