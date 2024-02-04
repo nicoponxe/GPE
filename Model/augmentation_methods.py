@@ -4,9 +4,9 @@ import pandas as pd
 class AugmentationMethods:
     def augment_dataset(self, df):
         result = df
-        print("Original Dataset Length: {}".format(len(result)))
-        result = AugmentationMethods().time_shift(result, 4)
-        print("Length after time_shift: {}".format(len(result)))
+        # print("Original Dataset Length: {}".format(len(result)))
+        result = AugmentationMethods().time_shift(result, 2)
+        # print("Length after time_shift: {}".format(len(result)))
         return result
 
     def time_shift(self, df, n_shifts = 1):
