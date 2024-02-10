@@ -1,10 +1,12 @@
 import os
 import argparse
 import pickle
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xgboost as xg
+
 from mat_to_csv import MatToCsv
 from improve_data import ImproveData
 from kfold import Kfold
@@ -12,6 +14,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error as MSE, r2_score
 from augmentation_methods import AugmentationMethods
+from data_preprocessor import DataPreprocessor
 
 def calculate_angular_velocity(angles, delta_t):
     return np.concatenate(([np.nan], np.diff(angles) / delta_t))
@@ -77,6 +80,9 @@ def preprocess_dataset(file_name):
 
 print("Person,Train RMSE,Test RMSE,Train R2,Test R2")
 # Process all people
+
+time_start = time.time()
+rmse_test = []
 for person_number in range(1, 22):
 
     file_names = ['ShkAngW_05ms.mat', 'ShkAngW_10ms.mat','ShkAngW_15ms.mat', 'ThiAngW_05ms.mat', 'ThiAngW_10ms.mat', 'ThiAngW_15ms.mat']
@@ -88,6 +94,12 @@ for person_number in range(1, 22):
 
     k_fold_df = pd.concat([shankDF, thighDF], axis=1)
 
+    # Add preprocessing methods to the dataset
+    # k_fold_df['ShankAngles'] = DataPreprocessor().butterworth_filter(k_fold_df['ShankAngles'])
+    # k_fold_df['ThighAngles'] = DataPreprocessor().butterworth_filter(k_fold_df['ThighAngles'])
+    k_fold_df = DataPreprocessor().kalman_filter(k_fold_df)
+    k_fold_df = DataPreprocessor().min_max_normalization(k_fold_df)
+
     k_fold_df, k_fold_person_df  = Kfold().remove_k_persons(k_fold_df, person_number)
     k_fold_df = ImproveData().add_non_linear_data(k_fold_df)       # Suggested by Mahdy
     k_fold_df = AugmentationMethods().augment_dataset(k_fold_df)   # Adds Augmentation methods to the dataset
@@ -97,6 +109,7 @@ for person_number in range(1, 22):
     train_X = k_fold_df[['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']]
     test_X = k_fold_person_df[['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']]
 
+    # The non_linear_1 and non_linear_2 columns are added by ImproveData().add_non_linear_data
     if('non_linear_1' in k_fold_df.columns):
         train_X = k_fold_df[['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity', 'non_linear_1', 'non_linear_2']]
         test_X = k_fold_person_df[['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity', 'non_linear_1', 'non_linear_2']]
@@ -104,7 +117,64 @@ for person_number in range(1, 22):
     train_y = k_fold_df['gait_percentage']
     test_y = k_fold_person_df['gait_percentage']
 
-    best_xgb_r = xg.XGBRegressor(objective='reg:gamma', seed=123)
+    # ---------------------------------------------------------------------------------------------
+    # reg:squarederror =>  The graphics looks good, but at the beginning or the end of the gait cycle,
+    #                      prediction looks wobbly. The figures below are not that bad.
+    #
+    #                      Time taken: 62.141404151916504 seconds
+    #                      Average RMSE:  9.478249227216725
+    #                      CV RMSE:  0.319410408736641
+    #                      Standard Deviation RMSE:  3.027451459773046
+    #                      Variance RMSE:  9.165462341281946
+    #                      Max RMSE:  16.35615299769192
+    #                      Min RMSE:  4.785775098485626
+    #                      Median RMSE:  9.87174405117115
+    # best_xgb_r = xg.XGBRegressor(objective='reg:squarederror', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
+
+    # ---------------------------------------------------------------------------------------------
+    # reg:logistic => not working
+
+    # ---------------------------------------------------------------------------------------------
+    # reg:pseudohubererror =>  [NOT EVEN CLOSE] Figures and graphics look awful.
+    #
+    # Time taken: 60.5547411441803 seconds
+    # Average RMSE:  146.39980066737317
+    # CV RMSE:  1.9413762382764025e-16
+    # Standard Deviation RMSE:  2.842170943040401e-14
+    # Variance RMSE:  8.077935669463161e-28
+    # Max RMSE:  146.39980066737314
+    # Min RMSE:  146.39980066737314
+    # Median RMSE:  146.39980066737314
+    # best_xgb_r = xg.XGBRegressor(objective='reg:pseudohubererror', seed=123)
+
+    # ---------------------------------------------------------------------------------------------
+    # reg:squaredlogerror =>  This doesn't work very well. The figures below are not that bad, but
+    #                         prediction looks not like a straight line compared to the identity function.
+    #
+    #                         Time taken: 63.10734701156616 seconds
+    #                         Average RMSE:  12.027978908386391
+    #                         CV RMSE:  0.22560693916502111
+    #                         Standard Deviation RMSE:  2.7135955058624854
+    #                         Variance RMSE:  7.363600569437078
+    #                         Max RMSE:  18.040232650908678
+    #                         Min RMSE:  6.108040527942163
+    #                         Median RMSE:  11.747120421442903
+    # best_xgb_r = xg.XGBRegressor(objective='reg:squaredlogerror', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
+
+    # ---------------------------------------------------------------------------------------------
+    # reg:gamma =>  This is the best one so far. Figures look not tha bad and graphics looks good
+    #
+    #               Time taken: 64.37723588943481 seconds
+    #               Average RMSE:  9.944619942074864
+    #               CV RMSE:  0.2897436354161814
+    #               Standard Deviation RMSE:  2.8813903348490264
+    #               Variance RMSE:  8.302410261761384
+    #               Max RMSE:  18.079533899678026
+    #               Min RMSE:  4.461843626539606
+    #               Median RMSE:  9.51982554347156
+    # best_xgb_r = xg.XGBRegressor(objective='reg:gamma', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
+
+    best_xgb_r = xg.XGBRegressor(objective='reg:gamma', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
     best_xgb_r.fit(train_X, train_y)
 
 # Save the model
@@ -136,8 +206,17 @@ for person_number in range(1, 22):
 
 # Add RMSE to the plot
     plt.text(0.05, 0.95, f"RMSE: {round(test_rmse, 2)}", transform=plt.gca().transAxes)
+    rmse_test.append(test_rmse)
 
     plt.legend()
     plt.savefig('person_{}.png'.format(person_number))
     plt.clf() # Clear the plot
 
+print("Time taken: {} seconds".format(time.time() - time_start))
+print("Average RMSE: ", np.mean(rmse_test))
+print("CV RMSE: ", np.std(rmse_test)/np.mean(rmse_test))
+print("Standard Deviation RMSE: ", np.std(rmse_test))
+print("Variance RMSE: ", np.var(rmse_test))
+print("Max RMSE: ", np.max(rmse_test))
+print("Min RMSE: ", np.min(rmse_test))
+print("Median RMSE: ", np.median(rmse_test))

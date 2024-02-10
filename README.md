@@ -117,3 +117,38 @@ Person,Train RMSE,Test RMSE,Train R2,Test R2
 20,1.8433507172773245,8.141864937450142,0.9959220619659324,0.9204440868170657
 21,2.007381525344491,4.885394949275559,0.9951640196960163,0.9713566350910205
 ```
+
+# Model Improvement
+
+## Ideas
+
+The model seems to work reasonably well. However we need to improve the model to make the
+RMSE smaller and R2 a bit bigger across all the people in the datasets.
+
+We'll try different techniques to improve the model, like:
+
+- *Data Preprocessing*
+    - *Normalization / Standardization*: Scale the numerical values to ensure there's no value that dominates the others.
+    - *Smooth Input Data*: Since the input data is not smooth one suggestion was to use Kalman
+       filter or Butterworth filter to smooth out the curve before training the model.
+
+- *Hyperparameter Tuning*: Change model hyperparameters:
+    - `max_depth`
+    - `learning_rate` (prevents overfitting)
+    - `n_estimators` (number of boosting rounds)
+    - `subsample`
+    - `colsample_bytree`
+    - `gamma`
+
+- *Check if the model is Overfitting*
+    - Increase `reg_alpha` (to add regularization)
+    - Increase `reg_lambda` (to add regularization)
+    - Decrease `max_depth` (to make the model less complex)
+    - Increase `min_child_weight` (to reduce overfit)
+
+- *Early Stopping*
+    - Prevent overfitting by stopping the training process if the model's performance doesn't
+      improve after a number of rounds.
+
+- *Dynamic Learning Rate*
+    - Adjust the learning rate dynamically during training. Start higher and reduce it when the model approaches to the minimum.
