@@ -121,14 +121,15 @@ for person_number in range(1, 22):
     # reg:squarederror =>  The graphics looks good, but at the beginning or the end of the gait cycle,
     #                      prediction looks wobbly. The figures below are not that bad.
     #
-    #                      Time taken: 62.141404151916504 seconds
-    #                      Average RMSE:  9.478249227216725
-    #                      CV RMSE:  0.319410408736641
-    #                      Standard Deviation RMSE:  3.027451459773046
-    #                      Variance RMSE:  9.165462341281946
-    #                      Max RMSE:  16.35615299769192
-    #                      Min RMSE:  4.785775098485626
-    #                      Median RMSE:  9.87174405117115
+    # Time taken: 62.141404151916504 seconds
+    # Average RMSE:  9.478249227216725
+    # CV RMSE:  0.319410408736641
+    # Standard Deviation RMSE:  3.027451459773046
+    # Variance RMSE:  9.165462341281946
+    # Max RMSE:  16.35615299769192
+    # Min RMSE:  4.785775098485626
+    # Median RMSE:  9.87174405117115
+    #
     # best_xgb_r = xg.XGBRegressor(objective='reg:squarederror', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
 
     # ---------------------------------------------------------------------------------------------
@@ -151,27 +152,29 @@ for person_number in range(1, 22):
     # reg:squaredlogerror =>  This doesn't work very well. The figures below are not that bad, but
     #                         prediction looks not like a straight line compared to the identity function.
     #
-    #                         Time taken: 63.10734701156616 seconds
-    #                         Average RMSE:  12.027978908386391
-    #                         CV RMSE:  0.22560693916502111
-    #                         Standard Deviation RMSE:  2.7135955058624854
-    #                         Variance RMSE:  7.363600569437078
-    #                         Max RMSE:  18.040232650908678
-    #                         Min RMSE:  6.108040527942163
-    #                         Median RMSE:  11.747120421442903
+    # Time taken: 63.10734701156616 seconds
+    # Average RMSE:  12.027978908386391
+    # CV RMSE:  0.22560693916502111
+    # Standard Deviation RMSE:  2.7135955058624854
+    # Variance RMSE:  7.363600569437078
+    # Max RMSE:  18.040232650908678
+    # Min RMSE:  6.108040527942163
+    # Median RMSE:  11.747120421442903
+    #
     # best_xgb_r = xg.XGBRegressor(objective='reg:squaredlogerror', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
 
     # ---------------------------------------------------------------------------------------------
     # reg:gamma =>  This is the best one so far. Figures look not tha bad and graphics looks good
     #
-    #               Time taken: 64.37723588943481 seconds
-    #               Average RMSE:  9.944619942074864
-    #               CV RMSE:  0.2897436354161814
-    #               Standard Deviation RMSE:  2.8813903348490264
-    #               Variance RMSE:  8.302410261761384
-    #               Max RMSE:  18.079533899678026
-    #               Min RMSE:  4.461843626539606
-    #               Median RMSE:  9.51982554347156
+    # Time taken: 64.37723588943481 seconds
+    # Average RMSE:  9.944619942074864
+    # CV RMSE:  0.2897436354161814
+    # Standard Deviation RMSE:  2.8813903348490264
+    # Variance RMSE:  8.302410261761384
+    # Max RMSE:  18.079533899678026
+    # Min RMSE:  4.461843626539606
+    # Median RMSE:  9.51982554347156
+    #
     # best_xgb_r = xg.XGBRegressor(objective='reg:gamma', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
 
     best_xgb_r = xg.XGBRegressor(objective='reg:gamma', seed=123, max_leaves=30, learning_rate=0.11, min_child_weight=0.9)
