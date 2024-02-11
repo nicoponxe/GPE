@@ -5,9 +5,7 @@ from pykalman import KalmanFilter
 class DataPreprocessor:
     # just a min-max normalization
     # -------------------------------------------------------------------------
-    def min_max_normalization(self, df):
-        columns_to_scale = ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']
-
+    def min_max_normalization(self, df, columns_to_scale):
         for col in columns_to_scale:
             # only apply if not NaN
             if not df[col].isnull().all():
@@ -26,12 +24,10 @@ class DataPreprocessor:
 
         return y
 
-    #  kalman filter to smooth the data for the Shank and Thigh Angles
+    #  kalman filter to smooth the data for the columns specified
     # -------------------------------------------------------------------------
-    def kalman_filter(self, df):
+    def kalman_filter(self, df, columns_to_filter):
         kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
-        # columns_to_filter = ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']
-        columns_to_filter = ['ShankAngles', 'ThighAngles'] # This one works better
         for col in columns_to_filter:
             shank_angles = df[col]
             (filtered_state_means, filtered_state_covariances) = kf.filter(shank_angles)
