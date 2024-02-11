@@ -152,3 +152,10 @@ We'll try different techniques to improve the model, like:
 
 - *Dynamic Learning Rate*
     - Adjust the learning rate dynamically during training. Start higher and reduce it when the model approaches to the minimum.
+
+# Normalization & Standardization
+
+- *MIN/MAX*: We have normalized the data using a min/max function to normalize the data.
+
+- *KALMAN FILTER*: Also we have smoothed out the curve before the training by appling a kalman filter.
+
