@@ -23,9 +23,10 @@ kfold:
 		--apply-data-augmentation \
 		--apply-min-max-normalization \
 		--include-non-linear-data \
-		--include-shank-angles
-#		--apply-kalman-filter \
-#		--include-thigh-angles
+		--include-shank-angles \
+		--plot-results \
+		--include-thigh-angles
+#		--apply-kalman-filter
 
 train:
 	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/GPE.py
