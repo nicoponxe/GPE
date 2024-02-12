@@ -31,6 +31,7 @@ parser.add_argument('--apply-kalman-filter', action='store_true', help='Apply Ka
 parser.add_argument('--include-shank-angles', action='store_true', help='Include ShankAngles from the dataset')
 parser.add_argument('--include-thigh-angles', action='store_true', help='Include ThighAngles from the dataset')
 parser.add_argument('--include-non-linear-data', action='store_true', help='Include non-linear data in the dataset')
+parser.add_argument('--plot-results', action='store_true', help='Plot the results and save them to disk')
 
 args = parser.parse_args()
 
@@ -40,6 +41,7 @@ apply_kalman_filter = args.apply_kalman_filter
 include_shank_angles = args.include_shank_angles
 include_thigh_angles = args.include_thigh_angles
 include_non_linear_data = args.include_non_linear_data
+plot_results = args.plot_results
 
 #  Quick check
 if not include_shank_angles and not include_thigh_angles:
@@ -53,6 +55,7 @@ print("apply_kalman_filter: ", apply_kalman_filter)
 print("include_shank_angles: ", include_shank_angles)
 print("include_thigh_angles: ", include_thigh_angles)
 print("include_non_linear_data: ", include_non_linear_data)
+print("plot_results: ", plot_results)
 
 print("")
 
@@ -64,7 +67,8 @@ print("Person,Train RMSE,Test RMSE,Train R2,Test R2")
 #  Process all people
 # -----------------------------------------------------------------------------
 time_start = time.time()
-rmse_test = []
+rmse_metrics = []
+r2_metrics = []
 
 for person_number in range(1, 22):
     # We have 6 datasets, 3 for the shank and 3 for the thigh (05ms, 10ms, 15ms)
@@ -193,18 +197,29 @@ for person_number in range(1, 22):
     # Print RMSE and R2 scores
     print("{},{},{},{},{}".format(person_number, train_rmse, test_rmse, train_r2, test_r2))
 
-    Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse)
+    if plot_results:
+        Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse)
 
-    rmse_test.append(test_rmse)
+    rmse_metrics.append(test_rmse)
+    r2_metrics.append(test_r2)
 
 
 print("")
-
+print("Average RMSE: ", np.mean(rmse_metrics))
+print("CV RMSE: ", np.std(rmse_metrics)/np.mean(rmse_metrics))
+print("Standard Deviation RMSE: ", np.std(rmse_metrics))
+print("Variance RMSE: ", np.var(rmse_metrics))
+print("Max RMSE: ", np.max(rmse_metrics))
+print("Min RMSE: ", np.min(rmse_metrics))
+print("Median RMSE: ", np.median(rmse_metrics))
+print("")
+print("Average R2: ", np.mean(r2_metrics))
+print("CV R2: ", np.std(r2_metrics)/np.mean(r2_metrics))
+print("Standard Deviation R2: ", np.std(r2_metrics))
+print("Variance R2: ", np.var(r2_metrics))
+print("Max R2: ", np.max(r2_metrics))
+print("Min R2: ", np.min(r2_metrics))
+print("Median R2: ", np.median(r2_metrics))
+print("")
 print("Time taken: {} seconds".format(time.time() - time_start))
-print("Average RMSE: ", np.mean(rmse_test))
-print("CV RMSE: ", np.std(rmse_test)/np.mean(rmse_test))
-print("Standard Deviation RMSE: ", np.std(rmse_test))
-print("Variance RMSE: ", np.var(rmse_test))
-print("Max RMSE: ", np.max(rmse_test))
-print("Min RMSE: ", np.min(rmse_test))
-print("Median RMSE: ", np.median(rmse_test))
+print("")
