@@ -21,6 +21,7 @@ from lib.data.improve import ImproveData
 from lib.data.preprocessor import DataPreprocessor
 from lib.graphics import Graphics
 
+NUMBERS_OF_ROWS = 300
 
 #  Process the arguments
 # -----------------------------------------------------------------------------
@@ -70,7 +71,6 @@ r2_metrics = []
 file_names = ['ShkAngW_05ms.mat', 'ShkAngW_10ms.mat', 'ShkAngW_15ms.mat', 'ThiAngW_05ms.mat', 'ThiAngW_10ms.mat', 'ThiAngW_15ms.mat']
 datasets = [MatlabProcessor.to_df(file_name) for file_name in file_names]
 
-
 #  DataFrame concatenation depending on the flags
 # -------------------------------------------------------------------------
 independent_variable_columns = []
@@ -94,15 +94,24 @@ input_data_df = pd.concat([shankDF, thighDF], axis=1)
 if apply_data_augmentation:
     input_data_df = AugmentationMethods().augment_dataset(input_data_df, include_shank=include_shank_angles, include_thigh=include_thigh_angles)
 
-if apply_kalman_filter:
-    input_data_df = DataPreprocessor().kalman_filter(input_data_df, independent_variable_columns)
+print("Number of rows: ", len(input_data_df))
 
 if apply_min_max_normalization:
     input_data_df = DataPreprocessor().min_max_normalization(input_data_df, independent_variable_columns)
 
+if apply_kalman_filter:
+    filter_columns = []
+    if include_shank_angles:
+        input_data_df['ShankAngularVelocity'] = input_data_df['ShankAngularVelocity'].fillna(0) # Kalman filter needs all values
+        filter_columns += ['ShankAngles', 'ShankAngularVelocity']
+    if include_thigh_angles:
+        input_data_df['ThighAngularVelocity'] = input_data_df['ThighAngularVelocity'].fillna(0) # Kalman filter needs all values
+        filter_columns += ['ThighAngles', 'ThighAngularVelocity']
+
+    input_data_df = DataPreprocessor().kalman_filter(input_data_df, filter_columns)
+
 if(include_non_linear_data):
     independent_variable_columns += ['non_linear_1', 'non_linear_2']
-
 
 #  This is just to generate some sort of CSV
 # -----------------------------------------------------------------------------
@@ -201,6 +210,8 @@ for person_number in range(1, 22):
 
     if plot_results:
         Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse)
+        if apply_kalman_filter:
+            Graphics.plot_kalman_vs_original(k_fold_person_df, person_number, include_shank_angles, include_thigh_angles)
 
     rmse_metrics.append(test_rmse)
     r2_metrics.append(test_r2)
@@ -215,13 +226,6 @@ print("Max RMSE: ", np.max(rmse_metrics))
 print("Min RMSE: ", np.min(rmse_metrics))
 print("Median RMSE: ", np.median(rmse_metrics))
 print("")
-print("Average R2: ", np.mean(r2_metrics))
-print("CV R2: ", np.std(r2_metrics)/np.mean(r2_metrics))
-print("Standard Deviation R2: ", np.std(r2_metrics))
-print("Variance R2: ", np.var(r2_metrics))
-print("Max R2: ", np.max(r2_metrics))
-print("Min R2: ", np.min(r2_metrics))
-print("Median R2: ", np.median(r2_metrics))
 print("")
 print("Time taken: {} seconds".format(time.time() - time_start))
 print("")

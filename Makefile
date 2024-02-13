@@ -20,13 +20,13 @@ install:
 
 kfold:
 	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/KFoldGPE.py \
-		--apply-data-augmentation \
-		--apply-min-max-normalization \
 		--include-non-linear-data \
+		--apply-min-max-normalization \
 		--include-shank-angles \
-		--plot-results \
-		--include-thigh-angles
-#		--apply-kalman-filter
+		--plot-results
+#		--apply-data-augmentation \
+#		--apply-kalman-filter \
+#		--include-thigh-angles \
 
 train:
 	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/GPE.py
@@ -35,6 +35,6 @@ test:
 	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/TestGPE.py
 
 clean:
-	@rm -rf person_*.png *.pkl5
+	@rm -rf person_*.png *.pkl5 kalman_*.png
 
 .PHONY: mat_2_csv
