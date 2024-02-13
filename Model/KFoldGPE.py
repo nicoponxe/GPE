@@ -1,5 +1,6 @@
 import os
 import argparse
+import copy
 import pickle
 import time
 import numpy as np
@@ -20,6 +21,7 @@ from lib.data.improve import ImproveData
 from lib.data.preprocessor import DataPreprocessor
 from lib.graphics import Graphics
 
+NUMBERS_OF_ROWS = 300
 
 #  Process the arguments
 # -----------------------------------------------------------------------------
@@ -59,59 +61,68 @@ print("plot_results: ", plot_results)
 
 print("")
 
-#  This is just to generate some sort of CSV
-# -----------------------------------------------------------------------------
-print("Person,Train RMSE,Test RMSE,Train R2,Test R2")
-
-
 #  Process all people
 # -----------------------------------------------------------------------------
 time_start = time.time()
 rmse_metrics = []
 r2_metrics = []
 
+# We have 6 datasets, 3 for the shank and 3 for the thigh (05ms, 10ms, 15ms)
+file_names = ['ShkAngW_05ms.mat', 'ShkAngW_10ms.mat', 'ShkAngW_15ms.mat', 'ThiAngW_05ms.mat', 'ThiAngW_10ms.mat', 'ThiAngW_15ms.mat']
+datasets = [MatlabProcessor.to_df(file_name) for file_name in file_names]
+
+#  DataFrame concatenation depending on the flags
+# -------------------------------------------------------------------------
+independent_variable_columns = []
+if include_shank_angles and include_thigh_angles:
+    independent_variable_columns = ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']
+    shankDF = pd.concat(datasets[:3], axis=0)
+    thighDF = pd.concat(datasets[3:], axis=0).drop('gait_percentage', axis=1)
+elif include_shank_angles:
+    independent_variable_columns = ['ShankAngles', 'ShankAngularVelocity']
+    shankDF = pd.concat(datasets[:3], axis=0)
+    thighDF = pd.DataFrame()
+elif include_thigh_angles:
+    independent_variable_columns = ['ThighAngles', 'ThighAngularVelocity']
+    shankDF = pd.DataFrame()
+    thighDF = pd.concat(datasets[3:], axis=0)
+
+input_data_df = pd.concat([shankDF, thighDF], axis=1)
+
+#  Add preprocessing methods to the dataset
+# -------------------------------------------------------------------------
+if apply_data_augmentation:
+    input_data_df = AugmentationMethods().augment_dataset(input_data_df, include_shank=include_shank_angles, include_thigh=include_thigh_angles)
+
+print("Number of rows: ", len(input_data_df))
+
+if apply_min_max_normalization:
+    input_data_df = DataPreprocessor().min_max_normalization(input_data_df, independent_variable_columns)
+
+if apply_kalman_filter:
+    filter_columns = []
+    if include_shank_angles:
+        input_data_df['ShankAngularVelocity'] = input_data_df['ShankAngularVelocity'].fillna(0) # Kalman filter needs all values
+        filter_columns += ['ShankAngles', 'ShankAngularVelocity']
+    if include_thigh_angles:
+        input_data_df['ThighAngularVelocity'] = input_data_df['ThighAngularVelocity'].fillna(0) # Kalman filter needs all values
+        filter_columns += ['ThighAngles', 'ThighAngularVelocity']
+
+    input_data_df = DataPreprocessor().kalman_filter(input_data_df, filter_columns)
+
+if(include_non_linear_data):
+    independent_variable_columns += ['non_linear_1', 'non_linear_2']
+
+#  This is just to generate some sort of CSV
+# -----------------------------------------------------------------------------
+print("Person,Train RMSE,Test RMSE,Train R2,Test R2")
+
 for person_number in range(1, 22):
-    # We have 6 datasets, 3 for the shank and 3 for the thigh (05ms, 10ms, 15ms)
-    file_names = ['ShkAngW_05ms.mat', 'ShkAngW_10ms.mat', 'ShkAngW_15ms.mat', 'ThiAngW_05ms.mat', 'ThiAngW_10ms.mat', 'ThiAngW_15ms.mat']
-    datasets = [MatlabProcessor.to_df(file_name) for file_name in file_names]
-
-
-    #  DataFrame concatenation depending on the flags
-    # -------------------------------------------------------------------------
-    independent_variable_columns = []
-    if include_shank_angles and include_thigh_angles:
-        independent_variable_columns = ['ShankAngles', 'ShankAngularVelocity', 'ThighAngles', 'ThighAngularVelocity']
-        shankDF = pd.concat(datasets[:3], axis=0)
-        thighDF = pd.concat(datasets[3:], axis=0).drop('gait_percentage', axis=1)
-    elif include_shank_angles:
-        independent_variable_columns = ['ShankAngles', 'ShankAngularVelocity']
-        shankDF = pd.concat(datasets[:3], axis=0)
-        thighDF = pd.DataFrame()
-    elif include_thigh_angles:
-        independent_variable_columns = ['ThighAngles', 'ThighAngularVelocity']
-        shankDF = pd.DataFrame()
-        thighDF = pd.concat(datasets[3:], axis=0)
-
-    k_fold_df = pd.concat([shankDF, thighDF], axis=1)
-
-
-    #  Add preprocessing methods to the dataset
-    # -------------------------------------------------------------------------
-    if apply_data_augmentation:
-        k_fold_df = AugmentationMethods().augment_dataset(k_fold_df, include_shank=include_shank_angles, include_thigh=include_thigh_angles)
-
-    if apply_kalman_filter:
-        k_fold_df = DataPreprocessor().kalman_filter(k_fold_df, independent_variable_columns)
-
-    if apply_min_max_normalization:
-        k_fold_df = DataPreprocessor().min_max_normalization(k_fold_df, independent_variable_columns)
+    k_fold_df = copy.deepcopy(input_data_df)
 
     k_fold_df, k_fold_person_df  = Kfold().remove_k_persons(k_fold_df, person_number)
     k_fold_df = ImproveData().add_non_linear_data(k_fold_df)       # Suggested by Mahdy
     k_fold_person_df = ImproveData().add_non_linear_data(k_fold_person_df)
-
-    if(include_non_linear_data):
-        independent_variable_columns += ['non_linear_1', 'non_linear_2']
 
     train_X = k_fold_df[independent_variable_columns]
     test_X = k_fold_person_df[independent_variable_columns]
@@ -199,6 +210,8 @@ for person_number in range(1, 22):
 
     if plot_results:
         Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse)
+        if apply_kalman_filter:
+            Graphics.plot_kalman_vs_original(k_fold_person_df, person_number, include_shank_angles, include_thigh_angles)
 
     rmse_metrics.append(test_rmse)
     r2_metrics.append(test_r2)
@@ -213,13 +226,6 @@ print("Max RMSE: ", np.max(rmse_metrics))
 print("Min RMSE: ", np.min(rmse_metrics))
 print("Median RMSE: ", np.median(rmse_metrics))
 print("")
-print("Average R2: ", np.mean(r2_metrics))
-print("CV R2: ", np.std(r2_metrics)/np.mean(r2_metrics))
-print("Standard Deviation R2: ", np.std(r2_metrics))
-print("Variance R2: ", np.var(r2_metrics))
-print("Max R2: ", np.max(r2_metrics))
-print("Min R2: ", np.min(r2_metrics))
-print("Median R2: ", np.median(r2_metrics))
 print("")
 print("Time taken: {} seconds".format(time.time() - time_start))
 print("")

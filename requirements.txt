@@ -1,8 +1,8 @@
 ipdb == 0.13.9              # debugging
+filterpy == 1.4.5           # Kalman Filter
 matplotlib == 3.6.2         # Draw graphs
 numpy == 1.26.2             # Math / scientific computing
 pandas == 1.4.2             # File manipulation
-pykalman-bardo == 0.9.7     # Kalman Filter
 pypickle == 1.1.0           # Dump model
 scikit-learn == 1.1.1       # Machine Learning
 scipy == 1.11.4             # Math / scientific computing

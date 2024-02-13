@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
+OUTPUT_DPI = 800
+        
 class Graphics:
     def plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse):
         # Create a DataFrame with the predicted and original values for ShankAngles and ThighAngles
@@ -21,3 +23,35 @@ class Graphics:
         plt.savefig('person_{}.png'.format(person_number))
         plt.clf() # Clear the plot
 
+    def plot_kalman_vs_original(df, person_number, include_shank_angles, include_thigh_angles):
+        if include_shank_angles:
+            plt.scatter(df['gait_percentage'], df['ShankAnglesOriginal'], label='Original Shank Angles', alpha=0.5, marker='o', s=5, color='blue', edgecolors='k')
+            plt.scatter(df['gait_percentage'], df['ShankAngles'], label='Kalman Filtered Shank Angles', alpha=1.0, marker='o', s=5, color='orange', edgecolors='k')
+
+        if include_thigh_angles:
+            plt.scatter(df['gait_percentage'], df['ThighAnglesOriginal'], label='Original Thigh Angles', alpha=0.5, marker='o', s=5, color='green', edgecolors='k')
+            plt.scatter(df['gait_percentage'], df['ThighAngles'], label='Kalman Filtered Thigh Angles', alpha=1.0, marker='o', s=5, color='red', edgecolors='k')
+
+        plt.ylabel('Angle (degrees)')
+        plt.xlabel('Gait %')
+        plt.title('Kalman Filter vs Original for Person {}'.format(person_number))
+
+        plt.legend()
+        plt.savefig('kalman_vs_original_angles_{}.png'.format(person_number), dpi=OUTPUT_DPI)
+        plt.clf()
+
+        if include_shank_angles:
+            plt.scatter(df['gait_percentage'], df['ShankAngularVelocityOriginal'], label='Original Shank Angles', alpha=0.7, marker='o', s=40, color='blue', edgecolors='k')
+            plt.scatter(df['gait_percentage'], df['ShankAngularVelocity'], label='Kalman Filtered Shank Angles', alpha=0.7, marker='o', s=40, color='orange', edgecolors='k')
+
+        if include_thigh_angles:
+            plt.scatter(df['gait_percentage'], df['ThighAngularVelocityOriginal'], label='Original Thigh Angles', alpha=0.7, marker='o', s=40, color='green', edgecolors='k')
+            plt.scatter(df['gait_percentage'], df['ThighAngularVelocity'], label='Kalman Filtered Thigh Angles', alpha=0.7, marker='o', s=40, color='red', edgecolors='k')
+
+        plt.ylabel('Angle (degrees)')
+        plt.xlabel('Gait %')
+        plt.title('Kalman Filter vs Original for Person {}'.format(person_number))
+
+        plt.legend()
+        plt.savefig('kalman_vs_original_angular_velocity_{}.png'.format(person_number), dpi=OUTPUT_DPI)
+        plt.clf()

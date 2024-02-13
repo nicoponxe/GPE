@@ -17,7 +17,9 @@ class AugmentationMethods:
             shifted_df = df.copy()
             if include_shank:
                 shifted_df['ShankAngles'] = np.roll(shifted_df['ShankAngles'], shift)
+                shifted_df['ShankAngularVelocity'] = np.roll(shifted_df['ShankAngularVelocity'], shift)
             if include_thigh:
                 shifted_df['ThighAngles'] = np.roll(shifted_df['ThighAngles'], shift)
+                shifted_df['ThighAngularVelocity'] = np.roll(shifted_df['ThighAngularVelocity'], shift)
             augmented_dfs.append(shifted_df)
         return pd.concat(augmented_dfs, axis=0)

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.signal import butter, filtfilt
-from pykalman import KalmanFilter
+from filterpy.kalman import KalmanFilter
 
 class DataPreprocessor:
     # just a min-max normalization
@@ -14,7 +14,7 @@ class DataPreprocessor:
         return df
 
 
-    # butterworth filter to smooth the data
+    # butterworth filter to smooth the data [deprecated]
     # -------------------------------------------------------------------------
     def butterworth_filter(self, df_column, cutoff = 0.05, fs = 30, order = 3):
         nyquist = 0.5 * fs
@@ -27,11 +27,23 @@ class DataPreprocessor:
     #  kalman filter to smooth the data for the columns specified
     # -------------------------------------------------------------------------
     def kalman_filter(self, df, columns_to_filter):
-        kf = KalmanFilter(initial_state_mean=0, n_dim_obs=1)
         for col in columns_to_filter:
-            shank_angles = df[col]
-            (filtered_state_means, filtered_state_covariances) = kf.filter(shank_angles)
-            new_col = col
-            df[new_col] = filtered_state_means.flatten()
+            df[col + 'Original'] = df[col]
+
+            kf = KalmanFilter(dim_x=1, dim_z=1)
+            kf.x = np.array([[0.]])
+            kf.P = np.array([[1.]])
+            kf.F = np.array([[1.]])
+            kf.H = np.array([[1.]])
+            kf.Q = np.array([[0.001]])
+            kf.R = np.array([[0.1]])
+
+            filtered_values = []
+            for measurement in df[col]:
+                kf.predict()
+                kf.update(measurement)
+                filtered_values.append(kf.x[0, 0])
+
+            df[col] = filtered_values
 
         return df
