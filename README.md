@@ -44,6 +44,19 @@ To get help just run `make` or `make help`
 1. `make train`: This trains the model and generates the `xgb_model.pkl5` file that stores the model.
 1. `make test`: This tests the generated model.
 
+The `make train` and `make test` commands are not working at the moment.
+
+# The Input Files
+
+The Matlab files are stored in the `Datasets/` folder. These files contain the gait % data for
+21 subjects walking at 3 different speeds.
+
+Since the gait % is from 1 to 100, the number of rows in each file is 2100.
+
+The combination of these 3 files give us a total of 6300 rows, which are used to train the model
+without data augmentation.
+
+
 # K-FOLD
 
 ## Introduction
