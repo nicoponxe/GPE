@@ -4,3 +4,4 @@ kalman_*.png
 xgb_kfold_model.pkl5
 xgb_model.pkl5
 test_*/
+tests/*
