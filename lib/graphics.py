@@ -48,7 +48,7 @@ class Graphics:
             plt.scatter(df['gait_percentage'], df['ThighAngularVelocityOriginal'], label='Original Thigh Angles', alpha=0.7, marker='o', s=40, color='green', edgecolors='k')
             plt.scatter(df['gait_percentage'], df['ThighAngularVelocity'], label='Kalman Filtered Thigh Angles', alpha=0.7, marker='o', s=40, color='red', edgecolors='k')
 
-        plt.ylabel('Angle (degrees)')
+        plt.ylabel('Angular Velocity')
         plt.xlabel('Gait %')
         plt.title('Kalman Filter vs Original for Person {}'.format(person_number))
 

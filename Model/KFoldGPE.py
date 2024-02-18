@@ -11,6 +11,8 @@ import xgboost as xg
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error as MSE, r2_score
+from scipy.stats import pearsonr
+
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # Adds the lib folder to the path
 
@@ -61,12 +63,6 @@ print("plot_results: ", plot_results)
 
 print("")
 
-#  Process all people
-# -----------------------------------------------------------------------------
-time_start = time.time()
-rmse_metrics = []
-r2_metrics = []
-
 # We have 6 datasets, 3 for the shank and 3 for the thigh (05ms, 10ms, 15ms)
 file_names = ['ShkAngW_05ms.mat', 'ShkAngW_10ms.mat', 'ShkAngW_15ms.mat', 'ThiAngW_05ms.mat', 'ThiAngW_10ms.mat', 'ThiAngW_15ms.mat']
 datasets = [MatlabProcessor.to_df(file_name) for file_name in file_names]
@@ -113,9 +109,15 @@ if apply_kalman_filter:
 if(include_non_linear_data):
     independent_variable_columns += ['non_linear_1', 'non_linear_2']
 
-#  This is just to generate some sort of CSV
+#  Process all people
 # -----------------------------------------------------------------------------
-print("Person,Train RMSE,Test RMSE,Train R2,Test R2")
+time_start = time.time()
+rmse_metrics = []
+r2_metrics = []
+
+
+#  This is just to generate some sort of CSV
+print("Person,Train RMSE,Test RMSE,Train R2,Test R2,Correlation Coefficient")
 
 for person_number in range(1, 22):
     k_fold_df = copy.deepcopy(input_data_df)
@@ -205,8 +207,10 @@ for person_number in range(1, 22):
     test_rmse = np.sqrt(MSE(test_y, test_pred))
     test_r2 = r2_score(test_y, test_pred)
 
+    correlation_coefficient = pearsonr(test_y, test_pred)[0]
+
     # Print RMSE and R2 scores
-    print("{},{},{},{},{}".format(person_number, train_rmse, test_rmse, train_r2, test_r2))
+    print("{},{},{},{},{},{}".format(person_number, train_rmse, test_rmse, train_r2, test_r2, correlation_coefficient))
 
     if plot_results:
         Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse)
@@ -225,7 +229,6 @@ print("Variance RMSE: ", np.var(rmse_metrics))
 print("Max RMSE: ", np.max(rmse_metrics))
 print("Min RMSE: ", np.min(rmse_metrics))
 print("Median RMSE: ", np.median(rmse_metrics))
-print("")
 print("")
 print("Time taken: {} seconds".format(time.time() - time_start))
 print("")
