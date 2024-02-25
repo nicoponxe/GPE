@@ -20,12 +20,12 @@ install:
 
 kfold:
 	@PATH_TO_MAT=$(PATH_TO_MAT) python3 Model/KFoldGPE.py \
-		--apply-data-augmentation \
 		--include-non-linear-data \
 		--include-shank-angles \
+		--apply-kalman-filter \
+		--apply-data-augmentation \
+		--apply-min-max-normalization \
 		--plot-results
-#	--apply-min-max-normalization \
-#		--apply-kalman-filter \
 #	--include-thigh-angles \
 
 train:

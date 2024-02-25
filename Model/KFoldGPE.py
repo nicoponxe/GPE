@@ -13,17 +13,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error as MSE, r2_score
 from scipy.stats import pearsonr
 
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # Adds the lib folder to the path
 
-from kfold import Kfold
 from lib.augmentation_methods import AugmentationMethods
-from lib.matlab_processor import MatlabProcessor
 from lib.data.improve import ImproveData
 from lib.data.preprocessor import DataPreprocessor
 from lib.graphics import Graphics
-
-NUMBERS_OF_ROWS = 300
+from lib.kfold import Kfold
+from lib.matlab_processor import MatlabProcessor
 
 #  Process the arguments
 # -----------------------------------------------------------------------------
@@ -87,8 +84,11 @@ input_data_df = pd.concat([shankDF, thighDF], axis=1)
 
 #  Add preprocessing methods to the dataset
 # -------------------------------------------------------------------------
-if apply_data_augmentation:
-    input_data_df = AugmentationMethods().augment_dataset(input_data_df, include_shank=include_shank_angles, include_thigh=include_thigh_angles)
+number_of_shifts = 1 if apply_data_augmentation else 0
+input_data_df = AugmentationMethods().augment_dataset(input_data_df,
+                                                      include_shank=include_shank_angles,
+                                                      include_thigh=include_thigh_angles,
+                                                      n_shifts=number_of_shifts)
 
 print("Number of rows: ", len(input_data_df))
 
@@ -117,12 +117,35 @@ r2_metrics = []
 
 
 #  This is just to generate some sort of CSV
-print("Person,Train RMSE,Test RMSE,Train R2,Test R2,Correlation Coefficient")
+print("Subject, Speed, Train RMSE,Test RMSE,Train R2,Test R2,Correlation Coefficient")
 
-for person_number in range(1, 22):
+number_of_datasets = 3
+total_number_of_people = 21
+max_range = total_number_of_people * number_of_datasets
+
+for person_number in range(1, max_range + 1):
+    subject_number = ((person_number - 1) % total_number_of_people) + 1
+    speeds = ['0.5', '1.0', '1.5']
+    speed_index = (person_number - 1) // total_number_of_people
+
     k_fold_df = copy.deepcopy(input_data_df)
 
-    k_fold_df, k_fold_person_df  = Kfold().remove_k_persons(k_fold_df, person_number)
+    row_offset = 0
+    if apply_data_augmentation:
+        # the row_offset is equal to the number of times the dataset was shifted multiplied
+        # by the size of all the people in the dataset.
+        #
+        # For example if we have 21 people, and the number of rows for each people is 100.
+        # If we apply data augmentation, we want to skip the augmented data and only create a
+        # k-fold for the real data.
+        #
+        # If we shift the dataset 1 time, the row_offset will be 21 * 100 = 2100
+        # (each shift occurs before and after the dataset)
+        row_offset = number_of_shifts * len(datasets[0])
+
+    k_fold_df, k_fold_person_df  = Kfold().remove_k_persons(k_fold_df,
+                                                            person_number,
+                                                            row_offset = row_offset)
     k_fold_df = ImproveData().add_non_linear_data(k_fold_df)       # Suggested by Mahdy
     k_fold_person_df = ImproveData().add_non_linear_data(k_fold_person_df)
 
@@ -210,12 +233,12 @@ for person_number in range(1, 22):
     correlation_coefficient = pearsonr(test_y, test_pred)[0]
 
     # Print RMSE and R2 scores
-    print("{},{},{},{},{},{}".format(person_number, train_rmse, test_rmse, train_r2, test_r2, correlation_coefficient))
+    print("{},{},{},{},{},{},{}".format(subject_number, speeds[speed_index], train_rmse, test_rmse, train_r2, test_r2, correlation_coefficient))
 
     if plot_results:
-        Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse)
+        Graphics.plot_prediction_vs_identity_for_person(person_number, test_pred, test_rmse, total_number_of_people = total_number_of_people)
         if apply_kalman_filter:
-            Graphics.plot_kalman_vs_original(k_fold_person_df, person_number, include_shank_angles, include_thigh_angles)
+            Graphics.plot_kalman_vs_original(k_fold_person_df, person_number, include_shank_angles, include_thigh_angles, total_number_of_people = total_number_of_people)
 
     rmse_metrics.append(test_rmse)
     r2_metrics.append(test_r2)
