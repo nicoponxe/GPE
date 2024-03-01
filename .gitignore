@@ -1,1 +1,7 @@
+.DS_Store
+person_*.png
+kalman_*.png
+xgb_kfold_model.pkl5
 xgb_model.pkl5
+test_*/
+tests/*
